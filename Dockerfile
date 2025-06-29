@@ -36,10 +36,9 @@ RUN apk --no-cache add build-base cargo curl make nginx rust supervisor && \
 COPY ./ /app/
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
-# Expose both LiteLLM and Nginx ports
-EXPOSE 4000 9000
+EXPOSE 80
 
 WORKDIR /app
 
 # Start supervisord and run healthcheck after a delay
-CMD ["sh", "-c", "supervisord -c /etc/supervisord.conf & sleep 10 && tail -f /dev/null"]
+CMD ["sh", "-c", "supervisord -c /etc/supervisord.conf & sleep 30 && tail -f /dev/null"]
