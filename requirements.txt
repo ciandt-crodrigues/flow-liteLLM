@@ -1,0 +1,2 @@
+litellm[proxy]==1.70.2
+cachetools>=5.3.0

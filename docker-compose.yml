@@ -1,0 +1,9 @@
+services:
+  app:
+    restart: always
+    build: 
+      context: .
+    container_name: flow-litellm
+    ports:
+      - "4000:4000"  # LiteLLM server port
+      - "9000:9000"  # Reverse proxy port
