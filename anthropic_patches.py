@@ -42,6 +42,8 @@ def custom_handle_clientside_credential(
     )
     metadata = kwargs.get("metadata", {})
     model_group = cast(str, metadata.get("model_group"))
+    if model_group is None:
+        model_group = "amazon-bedrock"
     _model_id = self._generate_model_id(
         model_group=model_group, litellm_params=dynamic_litellm_params
     )
