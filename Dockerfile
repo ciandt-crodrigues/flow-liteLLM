@@ -36,7 +36,7 @@ RUN apk --no-cache add build-base cargo curl make nginx rust supervisor && \
 COPY ./ /app/
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80
+EXPOSE 10000
 
 WORKDIR /app
 

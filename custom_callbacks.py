@@ -1,14 +1,11 @@
-import json
 import os
-import traceback
 from litellm.integrations.custom_logger import CustomLogger
-from litellm.proxy.proxy_server import UserAPIKeyAuth, DualCache, ProxyException
+from litellm.proxy.proxy_server import UserAPIKeyAuth, DualCache
 from typing import Literal
 import time
 import requests
 import threading
 from cachetools import TTLCache
-from fastapi import HTTPException
 
 # Import our custom Anthropic monkey patches
 from anthropic_patches import apply_anthropic_patches
@@ -72,12 +69,11 @@ class MyCustomHandler(CustomLogger):
         _, _, tenant = self.get_credentials_from_headers(data)
 
         data['api_key'] = token if token else "ignore"
-        #print(f"API Key: {data['api_key']}")
         data['extra_headers'] = {}
         data['extra_headers']['Authorization'] = f"Bearer {token}" if token else "Bearer ignore"
         data['extra_headers']['flowAgent'] = 'LiteLLM Proxy'
         data['extra_headers']['flowTenant'] = tenant
-
+        
         return data
 
     def prepare_deepseek(self, data):
@@ -103,56 +99,32 @@ class MyCustomHandler(CustomLogger):
         else:
             data['api_base'] = "https://flow.ciandt.com/ai-orchestration-api/v1/bedrock/invoke#"
 
-        # Map model aliases to their proper names
-        if data['model'] == 'claude-3-7-sonnet-latest':
-            data['model'] = 'bedrock/anthropic.claude-37-sonnet'
-            
-        data['allowedModels'] = ['anthropic.claude-37-sonnet']
-        # Always set allowedModels to a list with the model name without the 'bedrock/' prefix
-        if 'model' in data and data["model"]:
-            model_name = data["model"]
-            if model_name.startswith('bedrock/'):
-                model_name = model_name.removeprefix('bedrock/')
-            data['allowedModels'] = [model_name]
-            # Ensure metadata exists and model_group is set
-            if 'metadata' not in data:
-                data['metadata'] = {}
-            data['metadata']['model_group'] = 'amazon-bedrock'
-            
-            # For Anthropic models via Bedrock, we need to use the correct format
-            # The model should be 'bedrock/anthropic.claude-3-sonnet' not just 'anthropic.claude-3-sonnet'
-            # This ensures the model is properly recognized as a Bedrock model
-            if not data["model"].startswith('bedrock/') and 'anthropic' in model_name:
-                data["model"] = f"bedrock/{model_name}"
-
-        # Set up provider_specific_header for Bedrock models
-        if 'provider_specific_header' not in data:
-            data['provider_specific_header'] = {}
-        
-        # For Anthropic models, we need to set the custom_llm_provider
-        if 'claude' in data['model'].lower():
-            data['provider_specific_header']['custom_llm_provider'] = 'anthropic'
-        
-        if 'v1/messages' in data['proxy_server_request']['url']:
-            # Add our custom headers to provider_specific_header
-            if 'extra_headers' not in data['provider_specific_header']:
-                data['provider_specific_header']['extra_headers'] = {}
-            
-            # Get token from cache or generate a new one
-            token = self.prepare_flow_token(data)
-            _, _, tenant = self.get_credentials_from_headers(data)
-            
-            # Set our custom headers
-            data['provider_specific_header']['extra_headers']['Authorization'] = f"Bearer {token}" if token else "Bearer ignore"
-            data['provider_specific_header']['extra_headers']['flowAgent'] = 'LiteLLM Proxy'
-            data['provider_specific_header']['extra_headers']['flowTenant'] = tenant
-
         if 'claude-35-sonnet' in data["model"] and 'parallel_tool_calls' in data:
             del data['parallel_tool_calls']
 
         for message in data['messages'] if 'messages' in data else []:
             if 'content' in message and type(message['content']) is str and message['content'].strip() == "":
                 message['content'] = ":"
+
+        # Set up provider_specific_header for Bedrock models
+        if 'provider_specific_header' not in data:
+            data['provider_specific_header'] = {}
+        
+        # For Anthropic models, we need to set the custom_llm_provider
+        data['provider_specific_header']['custom_llm_provider'] = 'anthropic'
+
+        # Add our custom headers to provider_specific_header
+        if 'extra_headers' not in data['provider_specific_header']:
+            data['provider_specific_header']['extra_headers'] = {}
+        
+        # Get token from cache or generate a new one
+        token = self.prepare_flow_token(data)
+        _, _, tenant = self.get_credentials_from_headers(data)
+        
+        # Set our custom headers
+        data['provider_specific_header']['extra_headers']['Authorization'] = f"Bearer {token}" if token else "Bearer ignore"
+        data['provider_specific_header']['extra_headers']['flowAgent'] = 'LiteLLM Proxy'
+        data['provider_specific_header']['extra_headers']['flowTenant'] = tenant
 
         return data
 
@@ -181,9 +153,9 @@ class MyCustomHandler(CustomLogger):
                 elif header_name.upper() == 'FLOW_CLIENT_SECRET':
                     client_secret = header_value
                 elif header_name.upper() == 'FLOW_TENANT':
-                    tenant = header_value
+                    tenant = header_value 
         
-        return client_id, client_secret, tenant
+        return client_id, client_secret, tenant or os.getenv('FLOW_TENANT')
 
     def prepare_flow_token(self, data):
         """

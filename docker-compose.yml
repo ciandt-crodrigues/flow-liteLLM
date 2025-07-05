@@ -6,4 +6,4 @@ services:
     container_name: flow-litellm
     ports:
       - "4000:4000"  # LiteLLM server port
-      - "9000:9000"  # Reverse proxy port
+      - "10000:10000"  # Reverse proxy port
