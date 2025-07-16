@@ -19,19 +19,30 @@ model_list:
     litellm_params:
       model: gemini/gemini-2.5-pro
 
-  - model_name: bedrock/anthropic.claude-3-sonnet
-    litellm_params:
-      model: bedrock/anthropic.claude-3-sonnet
-
-  - model_name: bedrock/anthropic.claude-35-sonnet
-    litellm_params:
-      model: bedrock/anthropic.claude-35-sonnet
-
   - model_name: bedrock/anthropic.claude-37-sonnet
+    model_info:
+        supports_vision: True
+        supports_reasoning: True
+        supports_prompt_caching: True
     litellm_params:
       model: bedrock/anthropic.claude-37-sonnet
       allowedModels: 
         - "anthropic.claude-37-sonnet"
+      anthropic_version: bedrock-2023-05-31
+      max_retries: 3 
+      metadata:
+        model_group: amazon-bedrock
+
+  - model_name: bedrock/anthropic.claude-4-sonnet
+    model_info:
+        supports_vision: True
+        supports_reasoning: True
+        supports_prompt_caching: True
+    custom_llm_provider: anthropic
+    litellm_params:
+      model: bedrock/anthropic.claude-4-sonnet
+      allowedModels: 
+        - "anthropic.claude-4-sonnet"
       anthropic_version: bedrock-2023-05-31
       max_retries: 3 
       metadata:
@@ -47,6 +58,5 @@ litellm_settings:
 
 router_settings:
   model_group_alias: { 
-    "gemini-2.5-pro": "bedrock/anthropic.claude-37-sonnet", 
     "claude-3-7-sonnet-latest": "bedrock/anthropic.claude-37-sonnet",
   }

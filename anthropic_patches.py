@@ -1,14 +1,18 @@
 from typing import Dict, List, cast
-from litellm import Deployment, GenericLiteLLMParams, LiteLLM_Params
+from litellm import BedrockModelInfo, Deployment, GenericLiteLLMParams, LiteLLM_Params
 from litellm.router import Router
 from litellm.router_utils.clientside_credential_handler import (
     get_dynamic_litellm_params
 )
 from litellm.llms.bedrock.messages.invoke_transformations.anthropic_claude3_transformation import AmazonAnthropicClaude3MessagesConfig
-
-
+from litellm.llms.bedrock.chat.invoke_transformations.base_invoke_transformation import ( AmazonInvokeConfig )
 original_transform_anthropic_messages_request = AmazonAnthropicClaude3MessagesConfig.transform_anthropic_messages_request
 
+
+def get_base_model(model: str) -> str:
+    if 'claude-4-sonnet' in model: # this is used to force litellm to use the Claude 3 provider, otherwise it will resolve to models from claude 2 or earlier
+        return 'anthropic.claude-3.claude-4-sonnet'
+    
 def transform_anthropic_messages_request(
         self,
         model: str,
@@ -65,3 +69,5 @@ def apply_anthropic_patches():
     # Apply the monkey patches
     Router._handle_clientside_credential = custom_handle_clientside_credential
     AmazonAnthropicClaude3MessagesConfig.transform_anthropic_messages_request = transform_anthropic_messages_request
+    BedrockModelInfo.get_base_model = get_base_model
+    AmazonInvokeConfig.aws_authentication_params = ["aws_access_key_id", "aws_secret_access_key", "aws_session_token", "aws_region_name", "aws_session_name", "aws_profile_name", "aws_role_name", "aws_web_identity_token", "aws_sts_endpoint", "aws_bedrock_runtime_endpoint"]
