@@ -7,11 +7,12 @@ from litellm.router_utils.clientside_credential_handler import (
 from litellm.llms.bedrock.messages.invoke_transformations.anthropic_claude3_transformation import AmazonAnthropicClaude3MessagesConfig
 from litellm.llms.bedrock.chat.invoke_transformations.base_invoke_transformation import ( AmazonInvokeConfig )
 original_transform_anthropic_messages_request = AmazonAnthropicClaude3MessagesConfig.transform_anthropic_messages_request
-
+original_get_base_model = BedrockModelInfo.get_base_model
 
 def get_base_model(model: str) -> str:
     if 'claude-4-sonnet' in model: # this is used to force litellm to use the Claude 3 provider, otherwise it will resolve to models from claude 2 or earlier
         return 'anthropic.claude-3.claude-4-sonnet'
+    return original_get_base_model(model=model)
     
 def transform_anthropic_messages_request(
         self,
